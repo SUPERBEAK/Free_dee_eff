@@ -16,12 +16,17 @@ namespace Freedeeeff
     public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     {
         private readonly MainViewModel _vm;
+        private bool _isSyncingScroll;
 
         public MainWindow(string? initialFilePath = null)
         {
             InitializeComponent();
             _vm = new MainViewModel();
             DataContext = _vm;
+
+            _vm.RequestFitWidthAction = ApplyFitWidth;
+            _vm.RequestFitPageAction = ApplyFitPage;
+            _vm.PropertyChanged += Vm_PropertyChanged;
 
             // Apply initial theme
             ApplicationThemeManager.Apply(ApplicationTheme.Dark);
@@ -296,6 +301,203 @@ namespace Freedeeeff
             if (e.Key == Key.Enter)
             {
                 _vm.PerformSearch();
+            }
+        }
+
+        private void Vm_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(MainViewModel.CurrentPageIndex))
+            {
+                if (!_isSyncingScroll)
+                {
+                    ScrollToPage(_vm.CurrentPageIndex);
+                }
+                if (_vm.CurrentPageIndex >= 0 && _vm.CurrentPageIndex < _vm.Pages.Count)
+                {
+                    SidebarPageListBox.ScrollIntoView(_vm.Pages[_vm.CurrentPageIndex]);
+                }
+            }
+            else if (e.PropertyName == nameof(MainViewModel.IsDocumentLoaded))
+            {
+                if (_vm.IsDocumentLoaded)
+                {
+                    Dispatcher.InvokeAsync(() =>
+                    {
+                        ApplyFitWidth();
+                        ScrollToPage(0);
+                    }, System.Windows.Threading.DispatcherPriority.Loaded);
+                }
+            }
+        }
+
+        public void ApplyFitWidth()
+        {
+            if (_vm == null || !_vm.IsDocumentLoaded || _vm.Pages.Count == 0) return;
+
+            double viewportWidth = PdfScrollViewer.ActualWidth;
+            if (viewportWidth <= 100)
+            {
+                Dispatcher.InvokeAsync(ApplyFitWidth, System.Windows.Threading.DispatcherPriority.Loaded);
+                return;
+            }
+
+            // Available width accounts for left/right margins (24*2 = 48) and scrollbar (~18) + border (2)
+            double availableWidth = Math.Max(100, viewportWidth - 68);
+            int idx = Math.Clamp(_vm.CurrentPageIndex, 0, _vm.Pages.Count - 1);
+            double pageWidth = _vm.Pages[idx].Width;
+            if (pageWidth <= 0) pageWidth = 612;
+
+            double targetZoom = Math.Clamp(Math.Round(availableWidth / pageWidth, 2), 0.25, 4.0);
+            _vm.SetZoomDirect(targetZoom);
+        }
+
+        public void ApplyFitPage()
+        {
+            if (_vm == null || !_vm.IsDocumentLoaded || _vm.Pages.Count == 0) return;
+
+            double viewportWidth = PdfScrollViewer.ActualWidth;
+            double viewportHeight = PdfScrollViewer.ActualHeight;
+            if (viewportWidth <= 100 || viewportHeight <= 100)
+            {
+                Dispatcher.InvokeAsync(ApplyFitPage, System.Windows.Threading.DispatcherPriority.Loaded);
+                return;
+            }
+
+            double availableWidth = Math.Max(100, viewportWidth - 68);
+            double availableHeight = Math.Max(100, viewportHeight - 48);
+            int idx = Math.Clamp(_vm.CurrentPageIndex, 0, _vm.Pages.Count - 1);
+            double pageWidth = _vm.Pages[idx].Width;
+            double pageHeight = _vm.Pages[idx].Height;
+            if (pageWidth <= 0) pageWidth = 612;
+            if (pageHeight <= 0) pageHeight = 792;
+
+            double zoomW = availableWidth / pageWidth;
+            double zoomH = availableHeight / pageHeight;
+            double targetZoom = Math.Clamp(Math.Round(Math.Min(zoomW, zoomH), 2), 0.25, 4.0);
+            _vm.SetZoomDirect(targetZoom);
+        }
+
+        private void PdfScrollViewer_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (_vm != null && _vm.IsFitWidthMode && _vm.IsDocumentLoaded && e.WidthChanged)
+            {
+                ApplyFitWidth();
+            }
+        }
+
+        private void PdfScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            if (_isSyncingScroll || _vm == null || !_vm.IsDocumentLoaded || _vm.Pages.Count == 0) return;
+
+            if (e.VerticalChange != 0 || e.ViewportHeightChange != 0)
+            {
+                UpdateCurrentPageFromScroll();
+            }
+        }
+
+        private void UpdateCurrentPageFromScroll()
+        {
+            if (_vm == null || !_vm.IsDocumentLoaded || _vm.Pages.Count == 0) return;
+
+            double viewportHeight = PdfScrollViewer.ViewportHeight;
+            if (viewportHeight <= 0) return;
+
+            int bestIndex = -1;
+            double maxOverlap = -1;
+
+            for (int i = 0; i < _vm.Pages.Count; i++)
+            {
+                var container = PdfPagesControl.ItemContainerGenerator.ContainerFromIndex(i) as FrameworkElement;
+                if (container == null) continue;
+
+                try
+                {
+                    GeneralTransform transform = container.TransformToAncestor(PdfScrollViewer);
+                    Point topPoint = transform.Transform(new Point(0, 0));
+                    double top = topPoint.Y;
+                    double bottom = top + container.ActualHeight;
+
+                    double visibleTop = Math.Max(0, top);
+                    double visibleBottom = Math.Min(viewportHeight, bottom);
+                    double overlap = visibleBottom - visibleTop;
+
+                    if (overlap > maxOverlap)
+                    {
+                        maxOverlap = overlap;
+                        bestIndex = i;
+                    }
+                }
+                catch
+                {
+                    // Ignore transient layout state
+                }
+            }
+
+            if (bestIndex >= 0 && bestIndex != _vm.CurrentPageIndex)
+            {
+                _isSyncingScroll = true;
+                try
+                {
+                    _vm.CurrentPageIndex = bestIndex;
+                    if (bestIndex < _vm.Pages.Count)
+                    {
+                        SidebarPageListBox.ScrollIntoView(_vm.Pages[bestIndex]);
+                    }
+                }
+                finally
+                {
+                    _isSyncingScroll = false;
+                }
+            }
+        }
+
+        private void ScrollToPage(int index)
+        {
+            if (_vm == null || index < 0 || index >= _vm.Pages.Count) return;
+
+            var container = PdfPagesControl.ItemContainerGenerator.ContainerFromIndex(index) as FrameworkElement;
+            if (container != null)
+            {
+                _isSyncingScroll = true;
+                try
+                {
+                    GeneralTransform transform = container.TransformToAncestor(PdfPagesControl);
+                    Point target = transform.Transform(new Point(0, 0));
+                    PdfScrollViewer.ScrollToVerticalOffset(Math.Max(0, target.Y - 12));
+                }
+                catch
+                {
+                    container.BringIntoView();
+                }
+                finally
+                {
+                    _isSyncingScroll = false;
+                }
+            }
+            else
+            {
+                Dispatcher.InvokeAsync(() =>
+                {
+                    var c = PdfPagesControl.ItemContainerGenerator.ContainerFromIndex(index) as FrameworkElement;
+                    if (c != null)
+                    {
+                        _isSyncingScroll = true;
+                        try
+                        {
+                            GeneralTransform transform = c.TransformToAncestor(PdfPagesControl);
+                            Point target = transform.Transform(new Point(0, 0));
+                            PdfScrollViewer.ScrollToVerticalOffset(Math.Max(0, target.Y - 12));
+                        }
+                        catch
+                        {
+                            c.BringIntoView();
+                        }
+                        finally
+                        {
+                            _isSyncingScroll = false;
+                        }
+                    }
+                }, System.Windows.Threading.DispatcherPriority.Loaded);
             }
         }
     }

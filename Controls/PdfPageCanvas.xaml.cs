@@ -106,13 +106,19 @@ namespace Freedeeeff.Controls
             RebuildSearchLayer();
         }
 
+        private (double pw, double ph) GetPageDimensions()
+        {
+            double pw = _pageVm != null && _pageVm.Width > 0 ? _pageVm.Width : (ActualWidth > 0 ? ActualWidth : 612);
+            double ph = _pageVm != null && _pageVm.Height > 0 ? _pageVm.Height : (ActualHeight > 0 ? ActualHeight : 792);
+            return (pw, ph);
+        }
+
         private void RebuildAnnotationsLayer()
         {
             AnnotationsCanvas.Children.Clear();
             if (_pageVm == null) return;
 
-            double pw = ActualWidth > 0 ? ActualWidth : _pageVm.Width;
-            double ph = ActualHeight > 0 ? ActualHeight : _pageVm.Height;
+            var (pw, ph) = GetPageDimensions();
 
             foreach (var item in _pageVm.Annotations)
             {
@@ -346,8 +352,7 @@ namespace Freedeeeff.Controls
                 {
                     _draggedAnnotation = item;
                     Point pos = e.GetPosition(AnnotationsCanvas);
-                    double pw = ActualWidth > 0 ? ActualWidth : _pageVm.Width;
-                    double ph = ActualHeight > 0 ? ActualHeight : _pageVm.Height;
+                    var (pw, ph) = GetPageDimensions();
                     _dragOffset = new Point(pos.X - item.RelX * pw, pos.Y - item.RelY * ph);
                     element.CaptureMouse();
                     e.Handled = true;
@@ -359,8 +364,7 @@ namespace Freedeeeff.Controls
                 if (_draggedAnnotation == item && element.IsMouseCaptured && _pageVm != null)
                 {
                     Point pos = e.GetPosition(AnnotationsCanvas);
-                    double pw = ActualWidth > 0 ? ActualWidth : _pageVm.Width;
-                    double ph = ActualHeight > 0 ? ActualHeight : _pageVm.Height;
+                    var (pw, ph) = GetPageDimensions();
 
                     double newX = (pos.X - _dragOffset.X) / pw;
                     double newY = (pos.Y - _dragOffset.Y) / ph;
@@ -391,8 +395,7 @@ namespace Freedeeeff.Controls
             OcrOverlayCanvas.Children.Clear();
             if (_pageVm?.OcrResult == null || !_pageVm.IsOcrOverlayVisible) return;
 
-            double pw = ActualWidth > 0 ? ActualWidth : _pageVm.Width;
-            double ph = ActualHeight > 0 ? ActualHeight : _pageVm.Height;
+            var (pw, ph) = GetPageDimensions();
 
             foreach (var line in _pageVm.OcrResult.Lines)
             {
@@ -429,8 +432,7 @@ namespace Freedeeeff.Controls
             SearchOverlayCanvas.Children.Clear();
             if (_pageVm == null) return;
 
-            double pw = ActualWidth > 0 ? ActualWidth : _pageVm.Width;
-            double ph = ActualHeight > 0 ? ActualHeight : _pageVm.Height;
+            var (pw, ph) = GetPageDimensions();
 
             foreach (var match in _pageVm.SearchHighlights)
             {
@@ -457,8 +459,7 @@ namespace Freedeeeff.Controls
             if (_mainVm == null || _pageVm == null) return;
 
             _startPoint = e.GetPosition(InteractiveCanvas);
-            double pw = ActualWidth > 0 ? ActualWidth : _pageVm.Width;
-            double ph = ActualHeight > 0 ? ActualHeight : _pageVm.Height;
+            var (pw, ph) = GetPageDimensions();
 
             switch (_mainVm.ActiveTool)
             {
@@ -577,8 +578,7 @@ namespace Freedeeeff.Controls
             InteractiveCanvas.ReleaseMouseCapture();
 
             Point current = e.GetPosition(InteractiveCanvas);
-            double pw = ActualWidth > 0 ? ActualWidth : _pageVm.Width;
-            double ph = ActualHeight > 0 ? ActualHeight : _pageVm.Height;
+            var (pw, ph) = GetPageDimensions();
 
             double x = Math.Min(_startPoint.X, current.X);
             double y = Math.Min(_startPoint.Y, current.Y);
@@ -730,8 +730,7 @@ namespace Freedeeeff.Controls
 
             if (string.IsNullOrWhiteSpace(text) || _mainVm == null || _pageVm == null) return;
 
-            double pw = ActualWidth > 0 ? ActualWidth : _pageVm.Width;
-            double ph = ActualHeight > 0 ? ActualHeight : _pageVm.Height;
+            var (pw, ph) = GetPageDimensions();
 
             double x = Canvas.GetLeft(InPlaceTextBox);
             double y = Canvas.GetTop(InPlaceTextBox);

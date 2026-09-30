@@ -50,10 +50,20 @@ namespace Freedeeeff.ViewModels
         private bool _isDocumentLoaded;
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CurrentPageNumber))]
         private int _currentPageIndex;
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CurrentPageNumber))]
         private int _totalPages;
+
+        public int CurrentPageNumber => TotalPages == 0 ? 0 : CurrentPageIndex + 1;
+
+        [ObservableProperty]
+        private bool _isFitWidthMode = true;
+
+        public Action? RequestFitWidthAction { get; set; }
+        public Action? RequestFitPageAction { get; set; }
 
         [ObservableProperty]
         private double _zoomLevel = 1.0;
@@ -189,7 +199,11 @@ namespace Freedeeeff.ViewModels
 
                 IsDocumentLoaded = true;
                 CurrentPageIndex = 0;
+                IsFitWidthMode = true;
                 StatusMessage = $"Loaded {pageCount} page(s).";
+
+                // Trigger default fit to middle area width
+                RequestFitWidthAction?.Invoke();
 
                 // Render first few pages and thumbnails in background
                 _ = RenderInitialPagesAsync();
@@ -476,31 +490,101 @@ namespace Freedeeeff.ViewModels
             }
         }
 
+        // Page navigation commands
+        [RelayCommand]
+        public void PreviousPage()
+        {
+            if (CurrentPageIndex > 0)
+            {
+                CurrentPageIndex--;
+            }
+        }
+
+        [RelayCommand]
+        public void NextPage()
+        {
+            if (CurrentPageIndex < Pages.Count - 1)
+            {
+                CurrentPageIndex++;
+            }
+        }
+
         // Zoom commands
         [RelayCommand]
-        public void ZoomIn() => SetZoom(ZoomLevel + 0.25);
+        public void ZoomIn()
+        {
+            IsFitWidthMode = false;
+            SetZoom(ZoomLevel + 0.15);
+        }
 
         [RelayCommand]
-        public void ZoomOut() => SetZoom(ZoomLevel - 0.25);
+        public void ZoomOut()
+        {
+            IsFitWidthMode = false;
+            SetZoom(ZoomLevel - 0.15);
+        }
 
         [RelayCommand]
-        public void ZoomReset() => SetZoom(1.0);
+        public void ZoomReset()
+        {
+            IsFitWidthMode = false;
+            SetZoom(1.0);
+        }
 
         [RelayCommand]
-        public void ZoomFitWidth() => SetZoom(1.3);
+        public void ZoomFitWidth()
+        {
+            IsFitWidthMode = true;
+            RequestFitWidthAction?.Invoke();
+        }
 
         [RelayCommand]
-        public void ZoomFitPage() => SetZoom(0.85);
+        public void ZoomFitPage()
+        {
+            IsFitWidthMode = false;
+            RequestFitPageAction?.Invoke();
+        }
 
-        private void SetZoom(double val)
+        public void SetZoom(double val)
         {
             ZoomLevel = Math.Clamp(Math.Round(val, 2), 0.25, 4.0);
             StatusMessage = $"Zoom: {(int)(ZoomLevel * 100)}%";
-            // Re-render current page
-            if (CurrentPageIndex >= 0 && CurrentPageIndex < Pages.Count && !string.IsNullOrEmpty(CurrentFilePath))
+            RefreshRenderedPagesAtCurrentZoom();
+        }
+
+        public void SetZoomDirect(double val)
+        {
+            ZoomLevel = Math.Clamp(Math.Round(val, 2), 0.25, 4.0);
+            StatusMessage = $"Zoom: {(int)(ZoomLevel * 100)}%";
+            RefreshRenderedPagesAtCurrentZoom();
+        }
+
+        private void RefreshRenderedPagesAtCurrentZoom()
+        {
+            if (string.IsNullOrEmpty(CurrentFilePath) || Pages.Count == 0) return;
+
+            string path = CurrentFilePath;
+            double zoom = ZoomLevel;
+            int current = CurrentPageIndex;
+
+            Task.Run(() =>
             {
-                Pages[CurrentPageIndex].RenderedImage = _renderService.RenderPage(CurrentFilePath, CurrentPageIndex, ZoomLevel);
-            }
+                int start = Math.Max(0, current - 1);
+                int end = Math.Min(Pages.Count - 1, current + 1);
+
+                for (int i = start; i <= end; i++)
+                {
+                    int index = i;
+                    var img = _renderService.RenderPage(path, index, zoom);
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        if (index < Pages.Count && Math.Abs(ZoomLevel - zoom) < 0.01)
+                        {
+                            Pages[index].RenderedImage = img;
+                        }
+                    });
+                }
+            });
         }
 
         // Tool selection
