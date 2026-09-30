@@ -6,6 +6,23 @@
 
 A modern, high-performance, native Windows desktop PDF reader, editor, OCR, and splitting application built with **WPF on .NET 8** and styled with **Windows 11 Fluent 2 Design (WPF-UI)**.
 
+<p align="center">
+  <a href="https://github.com/SUPERBEAK/Free_dee_eff/releases/latest">
+    <img src="https://img.shields.io/badge/Download-Pre--Built%20Windows%20App-0078D7?style=for-the-badge&amp;logo=windows&amp;logoColor=white" alt="Download Release" />
+  </a>
+</p>
+
+---
+
+## 💾 Instant Download (No Compilation Needed)
+
+To use Freedeeeff without building or compiling:
+
+1. Go to the 👉 **[Releases Page](https://github.com/SUPERBEAK/Free_dee_eff/releases)**.
+2. Download the latest **`Freedeeeff-win-x64.zip`**.
+3. Extract the `.zip` file into any folder on your PC.
+4. Double-click **`Freedeeeff.exe`** to launch!
+
 ---
 
 ## 🌟 Key Features

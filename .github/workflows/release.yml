@@ -1,0 +1,50 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish Application
+        run: |
+          dotnet publish -c Release -r win-x64 --self-contained false -o publish Freedeeeff.csproj
+
+      - name: Create ZIP Package
+        shell: pwsh
+        run: |
+          Compress-Archive -Path publish\* -DestinationPath Freedeeeff-win-x64.zip -Force
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        with:
+          files: Freedeeeff-win-x64.zip
+          name: Freedeeeff ${{ github.ref_name || 'v1.0.0' }}
+          body: |
+            ## 🚀 Freedeeeff Pre-Built Windows Binary
+
+            **No compilation needed!**
+            
+            ### How to run:
+            1. Download `Freedeeeff-win-x64.zip` from Assets below.
+            2. Extract the zip to any folder on your computer.
+            3. Double-click `Freedeeeff.exe` to launch.
+          draft: false
+          prerelease: false

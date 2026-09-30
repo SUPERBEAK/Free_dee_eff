@@ -3,6 +3,8 @@
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+dist/
+publish/
 
 # Visual Studio / Rider / VS Code cache
 .vs/
