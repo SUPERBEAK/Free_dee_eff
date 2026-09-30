@@ -17,7 +17,7 @@ namespace Freedeeeff
     {
         private readonly MainViewModel _vm;
 
-        public MainWindow()
+        public MainWindow(string? initialFilePath = null)
         {
             InitializeComponent();
             _vm = new MainViewModel();
@@ -27,6 +27,14 @@ namespace Freedeeeff
             ApplicationThemeManager.Apply(ApplicationTheme.Dark);
 
             UpdateToolOptionsPanels(ActiveToolMode.Select);
+
+            if (!string.IsNullOrEmpty(initialFilePath) && File.Exists(initialFilePath))
+            {
+                Loaded += async (s, e) =>
+                {
+                    await _vm.OpenFileAsync(initialFilePath);
+                };
+            }
         }
 
         private void BtnToggleTheme_Click(object sender, RoutedEventArgs e)
