@@ -1,0 +1,45 @@
+<Window x:Class="Freedeeeff.Views.OcrResultsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="OCR Text Inspector"
+        Height="540" Width="640"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource ApplicationBackgroundBrush}">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Optical Character Recognition (OCR) Results" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                <TextBlock x:Name="TxtMetrics" Text="Detected 0 lines, 0 words" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,4,0,0"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="Copy All Text" Padding="12,6" Margin="0,0,8,0" Click="BtnCopy_Click"/>
+                <Button Content="Export to .txt..." Padding="12,6" Click="BtnExport_Click"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Recognized Text Editor / Viewer -->
+        <Border Grid.Row="1" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="6" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Margin="0,0,0,14">
+            <TextBox x:Name="TxtContent" AcceptsReturn="True" AcceptsTab="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Background="Transparent" Padding="12" FontSize="13" FontFamily="Consolas, Segoe UI"/>
+        </Border>
+
+        <!-- Footer -->
+        <Grid Grid.Row="2">
+            <TextBlock Text="OCR powered natively by Windows Hardware Acceleration" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
+            <Button Content="Close" HorizontalAlignment="Right" Padding="20,6" Click="BtnClose_Click"/>
+        </Grid>
+    </Grid>
+</Window>

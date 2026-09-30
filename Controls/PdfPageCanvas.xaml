@@ -1,0 +1,49 @@
+<UserControl x:Class="Freedeeeff.Controls.PdfPageCanvas"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d" 
+             d:DesignHeight="792" d:DesignWidth="612"
+             ClipToBounds="True">
+
+    <Border BorderBrush="#D0D0D0" BorderThickness="1" Background="White">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Direction="270" Color="#20000000"/>
+        </Border.Effect>
+
+        <Grid x:Name="PageRoot" Background="White">
+            <!-- 1. Rendered PDF Page Image -->
+            <Image x:Name="ImgPage" Stretch="Fill" IsHitTestVisible="False"/>
+
+            <!-- 2. Search Match Highlights Overlay -->
+            <Canvas x:Name="SearchOverlayCanvas" IsHitTestVisible="False"/>
+
+            <!-- 3. OCR Selectable Text Overlay -->
+            <Canvas x:Name="OcrOverlayCanvas"/>
+
+            <!-- 4. Permanent Annotations Layer -->
+            <Canvas x:Name="AnnotationsCanvas"/>
+
+            <!-- 5. Interactive Drawing / Preview Layer -->
+            <Canvas x:Name="InteractiveCanvas" Background="Transparent"
+                    MouseDown="InteractiveCanvas_MouseDown"
+                    MouseMove="InteractiveCanvas_MouseMove"
+                    MouseUp="InteractiveCanvas_MouseUp">
+                
+                <!-- Live drawing preview element (rect, line, pen stroke) -->
+                <Rectangle x:Name="LivePreviewRect" Visibility="Collapsed" StrokeDashArray="3 2"/>
+                <Line x:Name="LivePreviewLine" Visibility="Collapsed"/>
+                <Polyline x:Name="LivePreviewPolyline" Visibility="Collapsed"/>
+
+                <!-- In-place text editor for TextFill -->
+                <TextBox x:Name="InPlaceTextBox" Visibility="Collapsed"
+                         AcceptsReturn="True"
+                         Padding="4,2"
+                         BorderThickness="1" BorderBrush="#0078D7" Background="#FAFAFA"
+                         LostFocus="InPlaceTextBox_LostFocus"
+                         KeyDown="InPlaceTextBox_KeyDown"/>
+            </Canvas>
+        </Grid>
+    </Border>
+</UserControl>

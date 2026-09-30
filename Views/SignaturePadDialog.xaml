@@ -1,0 +1,114 @@
+<Window x:Class="Freedeeeff.Views.SignaturePadDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Create Signature"
+        Height="480" Width="560"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource ApplicationBackgroundBrush}">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Create Signature" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+
+        <!-- Tabbed creation modes -->
+        <TabControl Grid.Row="1" x:Name="TabModes" Margin="0,0,0,12">
+            <!-- Draw Tab -->
+            <TabItem Header="  Draw Signature  ">
+                <Grid Margin="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" BorderBrush="#CCCCCC" BorderThickness="1" Background="White" CornerRadius="4">
+                        <Grid>
+                            <InkCanvas x:Name="InkPad" Background="Transparent" EditingMode="Ink"/>
+                            <TextBlock Text="Sign here with mouse or pen" Foreground="#AAAAAA" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Opacity="0.5"/>
+                            <Line X1="20" Y1="170" X2="480" Y2="170" Stroke="#DDDDDD" StrokeThickness="1" StrokeDashArray="4 2" IsHitTestVisible="False"/>
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                        <TextBlock Text="Ink Color:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <ComboBox x:Name="CmbInkColor" Width="90" SelectedIndex="0" SelectionChanged="CmbInkColor_SelectionChanged" Margin="0,0,16,0">
+                            <ComboBoxItem Content="Black" Tag="#000000"/>
+                            <ComboBoxItem Content="Blue" Tag="#003399"/>
+                        </ComboBox>
+
+                        <Button Content="Clear Canvas" Padding="12,6" Click="BtnClearInk_Click"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <!-- Type Tab -->
+            <TabItem Header="  Type Signature  ">
+                <Grid Margin="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                        <TextBlock Text="Your Name:" Margin="0,0,0,4"/>
+                        <TextBox x:Name="TxtTypeName" Text="John Doe" Height="34" VerticalContentAlignment="Center" TextChanged="TxtTypeName_TextChanged"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
+                        <TextBlock Text="Font Style:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <ComboBox x:Name="CmbTypeFont" Width="180" SelectedIndex="0" SelectionChanged="CmbTypeFont_SelectionChanged">
+                            <ComboBoxItem Content="Segoe Script"/>
+                            <ComboBoxItem Content="Lucida Handwriting"/>
+                            <ComboBoxItem Content="Gabriola"/>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <Border Grid.Row="2" BorderBrush="#CCCCCC" BorderThickness="1" Background="White" CornerRadius="4" Padding="16">
+                        <Grid>
+                            <TextBlock x:Name="TxtTypePreview" Text="John Doe" FontFamily="Segoe Script" FontSize="36" FontStyle="Italic" Foreground="#003366" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Line X1="20" Y1="100" X2="480" Y2="100" Stroke="#DDDDDD" StrokeThickness="1" StrokeDashArray="4 2" IsHitTestVisible="False"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- Upload Tab -->
+            <TabItem Header="  Upload Image  ">
+                <Grid Margin="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+                        <Button Content="Select Signature Image (PNG/JPG)..." Padding="14,8" Click="BtnUploadImage_Click"/>
+                    </StackPanel>
+
+                    <Border Grid.Row="1" BorderBrush="#CCCCCC" BorderThickness="1" Background="#F8F8F8" CornerRadius="4">
+                        <Grid>
+                            <Image x:Name="ImgUploadPreview" MaxHeight="160" Stretch="Uniform" Margin="10"/>
+                            <TextBlock x:Name="TxtUploadHint" Text="No image selected yet" Foreground="#888888" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <!-- Save to library checkbox -->
+        <CheckBox Grid.Row="2" x:Name="ChkSaveToLibrary" Content="Save this signature to my library for 1-click reuse" IsChecked="True" Margin="0,0,0,16"/>
+
+        <!-- Dialog Buttons -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Cancel" Padding="16,8" Margin="0,0,8,0" Click="BtnCancel_Click"/>
+            <Button Content="Apply Signature" Style="{DynamicResource AccentButtonStyle}" Padding="20,8" Click="BtnApply_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

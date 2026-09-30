@@ -1,0 +1,372 @@
+<ui:FluentWindow x:Class="Freedeeeff.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:controls="clr-namespace:Freedeeeff.Controls"
+        xmlns:vm="clr-namespace:Freedeeeff.ViewModels"
+        xmlns:views="clr-namespace:Freedeeeff.Views"
+        mc:Ignorable="d"
+        Title="{Binding DocumentTitle}"
+        Height="840" Width="1320"
+        MinHeight="600" MinWidth="900"
+        WindowStartupLocation="CenterScreen">
+
+    <ui:FluentWindow.InputBindings>
+        <KeyBinding Modifiers="Control" Key="O" Command="{Binding OpenFileCommand}"/>
+        <KeyBinding Modifiers="Control" Key="S" Command="{Binding SaveCommand}"/>
+        <KeyBinding Modifiers="Control" Key="F" Command="{Binding ToggleSearchCommand}"/>
+        <KeyBinding Modifiers="Control" Key="Z" Command="{Binding UndoCommand}"/>
+    </ui:FluentWindow.InputBindings>
+
+    <Grid Background="{DynamicResource ApplicationBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Title Bar -->
+            <RowDefinition Height="Auto"/> <!-- Command Ribbon -->
+            <RowDefinition Height="Auto"/> <!-- Tool Options Sub-bar -->
+            <RowDefinition Height="*"/>    <!-- Main Content (Sidebar + Viewport) -->
+            <RowDefinition Height="Auto"/> <!-- Status Bar -->
+        </Grid.RowDefinitions>
+
+        <!-- 1. Fluent Title Bar -->
+        <ui:TitleBar Grid.Row="0" Title="{Binding DocumentTitle}">
+            <ui:TitleBar.TrailingContent>
+                <Button ToolTip="Toggle Light/Dark Theme" Padding="8,4" Margin="0,0,8,0" Click="BtnToggleTheme_Click">
+                    <TextBlock Text="🌓" FontSize="14"/>
+                </Button>
+            </ui:TitleBar.TrailingContent>
+        </ui:TitleBar>
+
+        <!-- 2. Command Ribbon -->
+        <Border Grid.Row="1" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="8,4">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                <StackPanel Orientation="Horizontal">
+                    <!-- File Actions -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,8,0">
+                        <Button Content="📂 Open" ToolTip="Open PDF Document (Ctrl+O)" Command="{Binding OpenFileCommand}" Margin="0,0,4,0" Padding="10,6"/>
+                        <Button Content="💾 Save" ToolTip="Save Changes (Ctrl+S)" Command="{Binding SaveCommand}" IsEnabled="{Binding IsDocumentLoaded}" Margin="0,0,4,0" Padding="10,6"/>
+                        <Button Content="Save As..." ToolTip="Save to New PDF File" Command="{Binding SaveAsCommand}" IsEnabled="{Binding IsDocumentLoaded}" Margin="0,0,4,0" Padding="8,6"/>
+                        <Button Content="🖨️ Print" ToolTip="Print Document" Click="BtnPrint_Click" IsEnabled="{Binding IsDocumentLoaded}" Margin="0,0,4,0" Padding="8,6"/>
+                    </StackPanel>
+
+                    <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="4,2"/>
+
+                    <!-- Primary Tool Selector -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,8,0">
+                        <RadioButton x:Name="ToolSelect" Content="↖ Select" ToolTip="Select / Move Annotations" IsChecked="True" Style="{DynamicResource ToolBarRadioButtonStyleKey}" Click="Tool_Click" Tag="Select" Margin="2,0"/>
+                        <RadioButton x:Name="ToolHand" Content="✋ Pan" ToolTip="Pan Viewport" Style="{DynamicResource ToolBarRadioButtonStyleKey}" Click="Tool_Click" Tag="Hand" Margin="2,0"/>
+                        <RadioButton x:Name="ToolTextFill" Content="✍ Text Fill" ToolTip="Click anywhere to type text" Style="{DynamicResource ToolBarRadioButtonStyleKey}" Click="Tool_Click" Tag="TextFill" Margin="2,0"/>
+                        <RadioButton x:Name="ToolSignature" Content="✒ Signature" ToolTip="Place signature on document" Style="{DynamicResource ToolBarRadioButtonStyleKey}" Click="Tool_Click" Tag="Signature" Margin="2,0"/>
+                        <RadioButton x:Name="ToolHighlight" Content="🖍 Highlight" ToolTip="Highlighter tool" Style="{DynamicResource ToolBarRadioButtonStyleKey}" Click="Tool_Click" Tag="Highlight" Margin="2,0"/>
+                        <RadioButton x:Name="ToolPen" Content="✏ Pen" ToolTip="Freehand drawing" Style="{DynamicResource ToolBarRadioButtonStyleKey}" Click="Tool_Click" Tag="Pen" Margin="2,0"/>
+                        <RadioButton x:Name="ToolRect" Content="▢ Rect" ToolTip="Draw rectangle" Style="{DynamicResource ToolBarRadioButtonStyleKey}" Click="Tool_Click" Tag="Rectangle" Margin="2,0"/>
+                        <RadioButton x:Name="ToolEllipse" Content="○ Ellipse" ToolTip="Draw ellipse" Style="{DynamicResource ToolBarRadioButtonStyleKey}" Click="Tool_Click" Tag="Ellipse" Margin="2,0"/>
+                        <RadioButton x:Name="ToolLine" Content="╱ Line" ToolTip="Draw straight line" Style="{DynamicResource ToolBarRadioButtonStyleKey}" Click="Tool_Click" Tag="Line" Margin="2,0"/>
+                        <RadioButton x:Name="ToolRedact" Content="⬛ Redact" ToolTip="Blackout / Whiteout sensitive data" Style="{DynamicResource ToolBarRadioButtonStyleKey}" Click="Tool_Click" Tag="Redaction" Margin="2,0"/>
+                        <RadioButton x:Name="ToolStamp" Content="🔖 Stamp" ToolTip="Add Approved/Confidential stamp" Style="{DynamicResource ToolBarRadioButtonStyleKey}" Click="Tool_Click" Tag="Stamp" Margin="2,0"/>
+                        <RadioButton x:Name="ToolEraser" Content="🧹 Eraser" ToolTip="Click on any annotation to delete" Style="{DynamicResource ToolBarRadioButtonStyleKey}" Click="Tool_Click" Tag="Eraser" Margin="2,0"/>
+                    </StackPanel>
+
+                    <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="4,2"/>
+
+                    <!-- PDF Split & Merge Tools -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,8,0">
+                        <Button Content="✂ Split PDF" ToolTip="Split document into separate files by ranges, pages, or chunks" Style="{DynamicResource AccentButtonStyle}" Click="BtnSplitPdf_Click" IsEnabled="{Binding IsDocumentLoaded}" Margin="0,0,4,0" Padding="12,6"/>
+                        <Button Content="📑 Merge PDFs" ToolTip="Combine multiple PDF files into one" Click="BtnMergePdf_Click" Margin="0,0,4,0" Padding="10,6"/>
+                    </StackPanel>
+
+                    <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="4,2"/>
+
+                    <!-- Windows Native OCR Group -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,8,0">
+                        <Button Content="🔍 OCR Page" ToolTip="Run Windows OCR on current page" Command="{Binding OcrCurrentPageCommand}" IsEnabled="{Binding IsDocumentLoaded}" Margin="0,0,4,0" Padding="10,6"/>
+                        <Button Content="OCR All" ToolTip="Run OCR on all pages in document" Command="{Binding OcrAllPagesCommand}" IsEnabled="{Binding IsDocumentLoaded}" Margin="0,0,4,0" Padding="8,6"/>
+                        <Button Content="Inspect Text" ToolTip="View &amp; Export recognized text" Click="BtnInspectOcr_Click" IsEnabled="{Binding IsDocumentLoaded}" Margin="0,0,4,0" Padding="8,6"/>
+                    </StackPanel>
+
+                    <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="4,2"/>
+
+                    <!-- Search & Navigation -->
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="🔎 Search" ToolTip="Search Text (Ctrl+F)" Command="{Binding ToggleSearchCommand}" IsEnabled="{Binding IsDocumentLoaded}" Margin="0,0,4,0" Padding="8,6"/>
+                        <Button Content="🔄 Rotate" ToolTip="Rotate Current Page 90° Clockwise" Click="BtnRotate_Click" IsEnabled="{Binding IsDocumentLoaded}" Margin="0,0,4,0" Padding="8,6"/>
+                        <Button Content="🗑 Delete Page" ToolTip="Delete Current Page" Click="BtnDeletePage_Click" IsEnabled="{Binding IsDocumentLoaded}" Margin="0,0,4,0" Padding="8,6"/>
+                        <Button Content="↩ Undo" ToolTip="Undo Last Action (Ctrl+Z)" Command="{Binding UndoCommand}" Margin="0,0,4,0" Padding="8,6"/>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- 3. Dynamic Tool Options Sub-bar -->
+        <Border Grid.Row="2" Background="{DynamicResource ControlFillColorSecondaryBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="12,6">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Text Fill Options -->
+                <StackPanel x:Name="PanelTextOptions" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Text="Font:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
+                    <ComboBox x:Name="CmbFontFamily" Width="110" SelectedIndex="0" Height="28" Margin="0,0,10,0" SelectionChanged="CmbFontFamily_SelectionChanged">
+                        <ComboBoxItem Content="Arial"/>
+                        <ComboBoxItem Content="Calibri"/>
+                        <ComboBoxItem Content="Segoe UI"/>
+                        <ComboBoxItem Content="Times New Roman"/>
+                        <ComboBoxItem Content="Courier New"/>
+                    </ComboBox>
+
+                    <TextBlock Text="Size:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
+                    <ComboBox x:Name="CmbFontSize" Width="60" SelectedIndex="2" Height="28" Margin="0,0,10,0" SelectionChanged="CmbFontSize_SelectionChanged">
+                        <ComboBoxItem Content="10"/>
+                        <ComboBoxItem Content="12"/>
+                        <ComboBoxItem Content="14"/>
+                        <ComboBoxItem Content="18"/>
+                        <ComboBoxItem Content="24"/>
+                        <ComboBoxItem Content="32"/>
+                    </ComboBox>
+
+                    <ToggleButton x:Name="BtnBold" Content="B" FontWeight="Bold" Width="28" Height="28" Margin="0,0,4,0" Checked="Style_Changed" Unchecked="Style_Changed"/>
+                    <ToggleButton x:Name="BtnItalic" Content="I" FontStyle="Italic" Width="28" Height="28" Margin="0,0,10,0" Checked="Style_Changed" Unchecked="Style_Changed"/>
+
+                    <TextBlock Text="Color:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
+                    <ComboBox x:Name="CmbTextColor" Width="80" SelectedIndex="0" Height="28" SelectionChanged="CmbTextColor_SelectionChanged">
+                        <ComboBoxItem Content="Black" Tag="#000000"/>
+                        <ComboBoxItem Content="Blue" Tag="#003399"/>
+                        <ComboBoxItem Content="Red" Tag="#CC0000"/>
+                        <ComboBoxItem Content="Green" Tag="#008800"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- Pen & Stroke Options -->
+                <StackPanel x:Name="PanelStrokeOptions" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Text="Stroke Color:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
+                    <ComboBox x:Name="CmbStrokeColor" Width="85" SelectedIndex="0" Height="28" Margin="0,0,10,0" SelectionChanged="CmbStrokeColor_SelectionChanged">
+                        <ComboBoxItem Content="Blue" Tag="#0078D7"/>
+                        <ComboBoxItem Content="Black" Tag="#000000"/>
+                        <ComboBoxItem Content="Red" Tag="#D32F2F"/>
+                        <ComboBoxItem Content="Green" Tag="#388E3C"/>
+                        <ComboBoxItem Content="Orange" Tag="#F57C00"/>
+                    </ComboBox>
+
+                    <TextBlock Text="Thickness:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
+                    <Slider x:Name="SliderThickness" Minimum="1" Maximum="12" Value="2.5" Width="80" VerticalAlignment="Center" ValueChanged="SliderThickness_ValueChanged"/>
+                    <TextBlock Text="{Binding ElementName=SliderThickness, Path=Value, StringFormat={}{0:F0}px}" Width="30" Margin="4,0,0,0" FontSize="11" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Highlight Options -->
+                <StackPanel x:Name="PanelHighlightOptions" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Text="Highlight Color:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
+                    <ComboBox x:Name="CmbHighlightColor" Width="90" SelectedIndex="0" Height="28" SelectionChanged="CmbHighlightColor_SelectionChanged">
+                        <ComboBoxItem Content="Yellow" Tag="#FFFF00"/>
+                        <ComboBoxItem Content="Green" Tag="#00FF00"/>
+                        <ComboBoxItem Content="Cyan" Tag="#00FFFF"/>
+                        <ComboBoxItem Content="Pink" Tag="#FF69B4"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- Redaction Options -->
+                <StackPanel x:Name="PanelRedactOptions" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Text="Redaction Type:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
+                    <ComboBox x:Name="CmbRedactionType" Width="100" SelectedIndex="0" Height="28" SelectionChanged="CmbRedactionType_SelectionChanged">
+                        <ComboBoxItem Content="Blackout"/>
+                        <ComboBoxItem Content="Whiteout"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- Stamp Options -->
+                <StackPanel x:Name="PanelStampOptions" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Text="Stamp Title:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
+                    <ComboBox x:Name="CmbStampTitle" Width="130" SelectedIndex="0" Height="28" SelectionChanged="CmbStampTitle_SelectionChanged">
+                        <ComboBoxItem Content="APPROVED"/>
+                        <ComboBoxItem Content="CONFIDENTIAL"/>
+                        <ComboBoxItem Content="VOID"/>
+                        <ComboBoxItem Content="DRAFT"/>
+                        <ComboBoxItem Content="FINAL"/>
+                        <ComboBoxItem Content="RECEIVED"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- Signature Drawer Toggle -->
+                <Button Content="✍ Signatures Library..." Padding="10,4" Margin="0,0,8,0" Click="BtnOpenSignaturePad_Click"/>
+            </StackPanel>
+        </Border>
+
+        <!-- 4. Main Content Area (Sidebar + Viewport + Search Overlay) -->
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="220" MinWidth="140" MaxWidth="400"/> <!-- Sidebar -->
+                <ColumnDefinition Width="4"/>                                   <!-- Grid Splitter -->
+                <ColumnDefinition Width="*"/>                                   <!-- PDF Canvas Viewport -->
+            </Grid.ColumnDefinitions>
+
+            <!-- Left Sidebar -->
+            <Border Grid.Column="0" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,1,0">
+                <TabControl x:Name="SidebarTabs" Margin="4">
+                    <!-- Pages / Thumbnails Tab -->
+                    <TabItem Header=" Pages ">
+                        <Grid Margin="0,6,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="{Binding Pages.Count, StringFormat={}{0} Pages}" FontSize="12" FontWeight="SemiBold" Margin="8,0,0,6"/>
+
+                            <ListBox Grid.Row="1" ItemsSource="{Binding Pages}" SelectedIndex="{Binding CurrentPageIndex, Mode=TwoWay}"
+                                     SelectionMode="Extended" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListBox.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Rotate 90° CW" Click="ContextMenu_Rotate_Click"/>
+                                        <MenuItem Header="Delete Page" Click="ContextMenu_Delete_Click"/>
+                                        <Separator/>
+                                        <MenuItem Header="Split / Extract Selected Pages..." Click="ContextMenu_Extract_Click"/>
+                                    </ContextMenu>
+                                </ListBox.ContextMenu>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="6,8">
+                                            <Border BorderBrush="#C0C0C0" BorderThickness="1" Background="White" Margin="0,0,0,4">
+                                                <Image Source="{Binding Thumbnail}" Width="140" Height="190" Stretch="Uniform"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding PageNumber, StringFormat={}Page {0}}" FontSize="11" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+                    </TabItem>
+
+                    <!-- Saved Signatures Tab -->
+                    <TabItem Header=" Signatures ">
+                        <Grid Margin="4,6,4,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <Button Grid.Row="0" Content="+ Create Signature" Margin="0,0,0,8" HorizontalAlignment="Stretch" Padding="8,6" Click="BtnOpenSignaturePad_Click"/>
+
+                            <ListBox Grid.Row="1" ItemsSource="{Binding SavedSignatures}" SelectionChanged="LstSignatures_SelectionChanged">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="4" Background="White" Padding="6" Margin="0,0,0,6">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="11" Foreground="#333333" Margin="0,0,0,4"/>
+                                                <Image Source="{Binding PreviewImage}" Height="50" Stretch="Uniform" HorizontalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+            </Border>
+
+            <!-- Splitter -->
+            <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" Background="{DynamicResource CardStrokeColorDefaultBrush}"/>
+
+            <!-- PDF Canvas Viewport -->
+            <Grid Grid.Column="2" Background="{DynamicResource AppCanvasBg}">
+                <!-- Empty State (No PDF loaded) -->
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="{Binding IsDocumentLoaded, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverse}">
+                    <TextBlock Text="📄" FontSize="64" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                    <TextBlock Text="Freedeeeff PDF Editor" FontSize="26" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                    <TextBlock Text="Read, edit, fill text, sign, OCR, and split PDF documents" FontSize="14" Foreground="#E0E0E0" HorizontalAlignment="Center" Margin="0,0,0,24"/>
+                    
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button Content="📂 Open PDF File" Style="{DynamicResource AccentButtonStyle}" FontSize="15" Padding="20,10" Margin="0,0,12,0" Command="{Binding OpenFileCommand}"/>
+                        <Button Content="📑 Merge PDFs..." FontSize="15" Padding="20,10" Click="BtnMergePdf_Click"/>
+                    </StackPanel>
+
+                    <TextBlock Text="Or drag and drop any PDF file here" FontSize="12" Foreground="#BBBBBB" HorizontalAlignment="Center" Margin="0,18,0,0"/>
+                </StackPanel>
+
+                <!-- Document Loaded: Scrollable PDF Canvas Pages -->
+                <ScrollViewer x:Name="PdfScrollViewer"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto"
+                              Visibility="{Binding IsDocumentLoaded, Converter={StaticResource BooleanToVisibilityConverter}}"
+                              PreviewMouseWheel="PdfScrollViewer_PreviewMouseWheel"
+                              AllowDrop="True" Drop="PdfScrollViewer_Drop" DragOver="PdfScrollViewer_DragOver">
+                    <ItemsControl ItemsSource="{Binding Pages}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="24"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <controls:PdfPageCanvas Margin="0,0,0,20"
+                                    LayoutUpdated="PdfPageCanvas_LayoutUpdated"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- Floating Search Bar (Ctrl+F) -->
+                <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,16,24,0"
+                        Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1" CornerRadius="8" Padding="10,8"
+                        Visibility="{Binding IsSearchOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="12" ShadowDepth="3" Direction="270" Color="#40000000"/>
+                    </Border.Effect>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox x:Name="TxtSearchQuery" Width="180" Height="30" VerticalContentAlignment="Center"
+                                 Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                 KeyDown="TxtSearchQuery_KeyDown" Margin="0,0,6,0"/>
+                        <Button Content="Find" Height="30" Padding="10,0" Margin="0,0,4,0" Command="{Binding PerformSearchCommand}"/>
+                        <Button Content="▲" ToolTip="Previous Match" Height="30" Width="30" Margin="0,0,2,0" Command="{Binding PreviousSearchMatchCommand}"/>
+                        <Button Content="▼" ToolTip="Next Match" Height="30" Width="30" Margin="0,0,6,0" Command="{Binding NextSearchMatchCommand}"/>
+                        <TextBlock Text="{Binding SearchStatusText}" VerticalAlignment="Center" FontSize="11" Margin="0,0,8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                        <Button Content="✕" ToolTip="Close Search" Height="30" Width="30" Command="{Binding ToggleSearchCommand}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Floating Zoom & Page Jump Toolbar -->
+                <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,24,20"
+                        Background="#E0202020" CornerRadius="20" Padding="12,6"
+                        Visibility="{Binding IsDocumentLoaded, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="－" ToolTip="Zoom Out" Foreground="White" Background="Transparent" BorderThickness="0" Width="26" Height="26" Command="{Binding ZoomOutCommand}"/>
+                        <TextBlock Text="{Binding ZoomLevel, StringFormat={}{0:P0}}" Foreground="White" Width="50" TextAlignment="Center" VerticalAlignment="Center" FontSize="12"/>
+                        <Button Content="＋" ToolTip="Zoom In" Foreground="White" Background="Transparent" BorderThickness="0" Width="26" Height="26" Command="{Binding ZoomInCommand}"/>
+                        
+                        <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="6,2"/>
+
+                        <Button Content="Fit W" ToolTip="Fit Width" Foreground="White" Background="Transparent" BorderThickness="0" Padding="6,2" FontSize="11" Command="{Binding ZoomFitWidthCommand}"/>
+                        <Button Content="100%" ToolTip="100% Zoom" Foreground="White" Background="Transparent" BorderThickness="0" Padding="6,2" FontSize="11" Command="{Binding ZoomResetCommand}"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- 5. Bottom Status Bar -->
+        <Border Grid.Row="4" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0" Padding="12,4">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding StatusMessage}" FontSize="12" Margin="0,0,16,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock Text="{Binding OcrStatusMessage}" FontSize="12" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" Margin="0,0,16,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0" Visibility="{Binding IsDocumentLoaded, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Text="Page " FontSize="12"/>
+                    <TextBlock Text="{Binding CurrentPageIndex, StringFormat={}{0}}" FontSize="12" FontWeight="SemiBold"/>
+                    <TextBlock Text=" of " FontSize="12"/>
+                    <TextBlock Text="{Binding TotalPages}" FontSize="12" FontWeight="SemiBold"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Visibility="{Binding HasUnsavedChanges, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Text="● Unsaved Changes" FontSize="11" Foreground="#FF9800" FontWeight="SemiBold"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</ui:FluentWindow>
