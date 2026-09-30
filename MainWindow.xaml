@@ -9,6 +9,7 @@
         xmlns:views="clr-namespace:Freedeeeff.Views"
         mc:Ignorable="d"
         Title="{Binding DocumentTitle}"
+        Icon="pack://application:,,,/Assets/app.png"
         Height="840" Width="1320"
         MinHeight="600" MinWidth="900"
         WindowStartupLocation="CenterScreen">
@@ -30,7 +31,7 @@
         </Grid.RowDefinitions>
 
         <!-- 1. Fluent Title Bar -->
-        <ui:TitleBar Grid.Row="0" Title="{Binding DocumentTitle}">
+        <ui:TitleBar Grid.Row="0" Title="{Binding DocumentTitle}" Icon="pack://application:,,,/Assets/app.png">
             <ui:TitleBar.TrailingContent>
                 <Button ToolTip="Toggle Light/Dark Theme" Padding="8,4" Margin="0,0,8,0" Click="BtnToggleTheme_Click">
                     <TextBlock Text="🌓" FontSize="14"/>
@@ -267,7 +268,11 @@
             <Grid Grid.Column="2" Background="{DynamicResource AppCanvasBg}">
                 <!-- Empty State (No PDF loaded) -->
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="{Binding IsDocumentLoaded, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverse}">
-                    <TextBlock Text="📄" FontSize="64" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                    <Image Source="pack://application:,,,/Assets/app.png" Width="110" Height="110" HorizontalAlignment="Center" Margin="0,0,0,16">
+                        <Image.Effect>
+                            <DropShadowEffect BlurRadius="16" ShadowDepth="4" Direction="270" Color="#40000000"/>
+                        </Image.Effect>
+                    </Image>
                     <TextBlock Text="Freedeeeff PDF Editor" FontSize="26" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" Margin="0,0,0,6"/>
                     <TextBlock Text="Read, edit, fill text, sign, OCR, and split PDF documents" FontSize="14" Foreground="#E0E0E0" HorizontalAlignment="Center" Margin="0,0,0,24"/>
                     

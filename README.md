@@ -1,4 +1,8 @@
-# Freedeeeff (Free_dee_eff) 📄✨
+<p align="center">
+  <img src="Assets/app.png" width="128" height="128" alt="Freedeeeff Icon" />
+</p>
+
+# Freedeeeff (Free_dee_eff)
 
 A modern, high-performance, native Windows desktop PDF reader, editor, OCR, and splitting application built with **WPF on .NET 8** and styled with **Windows 11 Fluent 2 Design (WPF-UI)**.
 
